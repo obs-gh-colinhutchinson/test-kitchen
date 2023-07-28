@@ -1,16 +1,19 @@
+PROVIDER ?= cloudformation
+
 IMAGE_NAME ?= test-kitchen
-CONTAINER_NAME ?= test-kitchen
+CONTAINER_BASE_NAME ?= test-kitchen
+CONTAINER_NAME ?= $(CONTAINER_BASE_NAME)-$(PROVIDER)
 UID := $(shell id -u)
 GID := $(shell id -g)
 DOCKER_COMMAND ?= /bin/bash
 
 OBSERVE_CUSTOMER := $(OBSERVE_CUSTOMER)
 OBSERVE_TOKEN := $(OBSERVE_TOKEN)
+OBSERVE_DOMAIN ?= observe-eng.com
 AWS_ACCESS_KEY_ID := $(AWS_ACCESS_KEY_ID)
 AWS_SECRET_ACCESS_KEY := $(AWS_SECRET_ACCESS_KEY)
 AWS_SESSION_TOKEN := $(AWS_SESSION_TOKEN)
 AWS_REGION ?= us-east-1
-PROVIDER ?= cloudformation
 
 .PHONY: docker/clean
 docker/clean: docker/test/clean
@@ -37,6 +40,7 @@ docker/run: docker/build
 		-e USER=$(USER) \
 		-e OBSERVE_CUSTOMER=$(OBSERVE_CUSTOMER) \
 		-e OBSERVE_TOKEN=$(OBSERVE_TOKEN) \
+		-e OBSERVE_DOMAIN=$(OBSERVE_DOMAIN) \
 		-e AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
 		-e AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
 		-e AWS_SESSION_TOKEN=$(AWS_SESSION_TOKEN) \
@@ -49,7 +53,7 @@ docker/run: docker/build
 	fi
 
 .PHONY: test
-test: test/create test/verify
+test: test/converge test/verify
 
 .PHONY: test/prerequisites
 test/prerequisites:
@@ -59,17 +63,17 @@ test/prerequisites:
 	@if [ -z "$(OBSERVE_TOKEN)" ] ; then echo "OBSERVE_TOKEN is not set."; exit 1; fi
 	@if [ -z "$(AWS_ACCESS_KEY_ID)" ] ; then echo "AWS_ACCESS_KEY_ID is not set."; exit 1; fi
 	@if [ -z "$(AWS_SECRET_ACCESS_KEY)" ] ; then echo "AWS_SECRET_ACCESS_KEY is not set."; exit 1; fi
-	aws logs delete-log-group --log-group-name /aws/lambda/spec-test-cf-$(USER) || true
 
-.PHONY: test/create
-test/create: test/prerequisites
-	kitchen create
+.PHONY: test/converge
+test/converge: test/prerequisites
+	kitchen converge
 
 .PHONY: test/verify
-test/verify: test/create
+test/verify: test/converge
 	kitchen verify
 
 .PHONY: test/clean
 test/clean: test/prerequisites
-	kitchen destroy
-	aws logs delete-log-group --log-group-name /aws/lambda/spec-test-cf-$(USER) || true
+	kitchen destroy || true
+	rm -rf .kitchen/* || true
+	aws logs delete-log-group --log-group-name /aws/lambda/spec-test-$(PROVIDER)-$(USER) || true

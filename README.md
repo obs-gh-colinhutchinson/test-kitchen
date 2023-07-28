@@ -18,6 +18,19 @@ Make sure to set these environment variables before running the tests:
 - `AWS_SESSION_TOKEN`: Your AWS session token (if required)
 - `AWS_REGION`: Your preferred AWS region (default: us-east-1)
 
+## Developing
+
+```
+gem install pry
+```
+
+Update rspec code to include `binding.pry`
+
+Instead of 
+`rspec -c -f documentation --default-path '/workdir'  -P 'test/integration/base/verify/collection_spec.rb'` 
+to run the rspec run
+`rspec -rpry -c -f documentation --default-path '/workdir' -P 'test/integration/base/verify/collection_spec.rb'`
+
 ## Docker
 
 ### Prerequisites
