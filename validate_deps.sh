@@ -8,7 +8,6 @@ DEPS=( [ruby]='3.0.0'
        [terraform]='v1.5.4'
        [aws]='2.13.4'
        [bundler]='2.2.3'
-       [rvm]='1.29.12'
 )
 
 for dep in "${!DEPS[@]}"; do
